@@ -156,6 +156,9 @@ class Parser
         $this->reader = $reader;
     }
 
+    /**
+     * @return DataModelFields[]
+     */
     private function createDataModel(): array
     {
         $model = new Model();
@@ -172,7 +175,38 @@ class Parser
         return $model->getFields();
     }
 
-    public function checkData(): array
+    /**
+     * @return array
+     */
+    public function checkStringPosition(): array
+    {
+        $model = $this->createDataModel();
+
+        $validModel = new Model();
+        $invalidModel = new Model();
+
+        foreach ($model as $data) {
+            $firstCheck = substr($data->getData(), $data->getMinimumBoundary() - 1, 1);
+            $secondCheck = substr($data->getData(), $data->getMaximumBoundary() - 1, 1);
+
+            $letter = $data->getLetter();
+            if (($secondCheck === $letter && $firstCheck !== $letter) || ($secondCheck !== $letter && $firstCheck === $letter)) {
+                $validModel->addField($data);
+                continue;
+            }
+            $invalidModel->addField($data);
+        }
+
+        return [
+            count($invalidModel->getFields()),
+            count($validModel->getFields())
+        ];
+    }
+
+    /**
+     * @return array
+     */
+    public function checkRegexData(): array
     {
         $model = $this->createDataModel();
 
@@ -201,6 +235,8 @@ class Parser
 
 $reader = new Reader('input.txt');
 $parser = new Parser($reader);
-list($invalidCount, $validCount) = $parser->checkData();
+list($invalidRegexCount, $validRegexCount) = $parser->checkRegexData();
+list($invalidStrPosCount, $validStrPosCount) = $parser->checkStringPosition();
 
-echo sprintf("There are %s valid passwords and %s invalid passwords\n", $validCount, $invalidCount);
+echo sprintf("Part 1: There are %s valid passwords and %s invalid passwords\n", $validRegexCount, $invalidRegexCount);
+echo sprintf("Part 2: There are %s valid passwords and %s invalid passwords\n", $validStrPosCount, $invalidStrPosCount);
